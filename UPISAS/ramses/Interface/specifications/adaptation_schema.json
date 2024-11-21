@@ -1,0 +1,173 @@
+{
+  "type": "object",
+  "properties": {
+    "server_number": {
+      "type": "object",
+      "properties": {
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "domain": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "load_balance_weight": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "number"
+        },
+        "stop": {
+          "type": "number"
+        },
+        "domain": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "circuit_breaker": {
+      "type": "object",
+      "properties": {
+        "values": {
+          "type": "object",
+          "properties": {
+            "requestVolumeThreshold": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "integer"
+                },
+                "stop": {
+                  "type": "integer"
+                },
+                "domain": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
+              }
+            },
+            "errorThresholdPercentage": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "integer"
+                },
+                "stop": {
+                  "type": "integer"
+                },
+                "domain": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
+              }
+            },
+            "sleepWindowInMilliseconds": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "integer"
+                },
+                "stop": {
+                  "type": "integer"
+                },
+                "domain": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "domain": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "timeouts": {
+      "type": "object",
+      "properties": {
+        "values": {
+          "type": "object",
+          "properties": {
+            "connectionTimeout": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "integer"
+                },
+                "stop": {
+                  "type": "integer"
+                },
+                "domain": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
+              }
+            },
+            "readTimeout": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "integer"
+                },
+                "stop": {
+                  "type": "integer"
+                },
+                "domain": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
+              }
+            },
+            "writeTimeout": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "integer"
+                },
+                "stop": {
+                  "type": "integer"
+                },
+                "domain": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "domain": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

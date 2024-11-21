@@ -1,0 +1,83 @@
+{
+  "type": "object",
+  "properties": {
+    "operation": {
+      "type": "string",
+      "enum": ["addInstances", "removeInstance", "changeLBWeights", "changeProperty"]
+    },
+    "serviceImplementationName": {
+      "type": "string"
+    },
+    "numberOfInstances": {
+      "type": "integer"
+    },
+    "removeInstanceName": {
+      "type": "string"
+    },
+    "weightsId": {
+      "type": "string"
+    },
+    "weights": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
+    "instancesToRemoveWeightOf": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "serviceName": {
+      "type": "string"
+    },
+    "propertiesName": {
+      "type": "string"
+    },
+    "propertiesToChange": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "port": {
+      "type": "integer"
+    }
+  },
+  "required": ["operation"],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operation": { "const": "addInstances" } }
+      },
+      "then": {
+        "required": ["serviceImplementationName", "numberOfInstances"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "removeInstance" } }
+      },
+      "then": {
+        "required": ["serviceImplementationName", "address", "port"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "changeLBWeights" } }
+      },
+      "then": {
+        "required": ["weightsId", "weights", "instancesToRemoveWeightOf"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "changeProperty" } }
+      },
+      "then": {
+        "required": ["serviceName","propertiesName", "propertiesToChange"]
+      }
+    }
+  ]
+}

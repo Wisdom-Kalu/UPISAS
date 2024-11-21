@@ -1,0 +1,258 @@
+{
+  "title": "RAMES Monitor Scheme",
+  "description": "All monitorable values within the RAMES exemplar",
+  "type": "object",
+  "properties": {
+    "serviceId": {
+      "description": "The service ID of the RAMES microservice",
+      "type": "string"
+    },
+    "currentImplementationId": {
+      "description": "The implementation ID of the current implementation",
+      "type": "string"
+    },
+    "instances": {
+      "description": "The instances of the RAMES microservice",
+      "type": "string"
+    },
+    "snapshot":  {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "serviceId": {
+          "type": "string"
+        },
+        "instanceId": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "BOOTING",
+            "ACTIVE",
+            "UNREACHABLE",
+            "FAILED",
+            "SHUTDOWN"
+          ]
+        },
+        "CircuitBreakerMetrics": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "name": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "CLOSED",
+                "OPEN",
+                "HALF_OPEN",
+                "DISABLED"
+              ]
+            },
+            "bufferedCallsCount": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "callDuration": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "number",
+                "format": "double"
+              }
+            },
+            "callMaxDuration": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "number",
+                "format": "double"
+              }
+            },
+            "callCount": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "slowCallCount": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "notPermittedCallsCount": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "failureRate": {
+              "type": "number",
+              "format": "double"
+            },
+            "slowCallRate": {
+              "type": "number",
+              "format": "double"
+            },
+            "totalCallsCount": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        },
+        "HttpEndpointMetrics": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "endpoint": {
+              "type": "string"
+            },
+            "httpMethod": {
+              "type": "string"
+            },
+            "OutcomeMetrics": {
+              "type": "object",
+              "properties": {
+                "outcome": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                "count": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "totalDuration": {
+                  "type": "number",
+                  "format": "double"
+                },
+                "maxDuration": {
+                  "type": "number",
+                  "format": "double"
+                }
+              }
+            }
+          }
+        },
+        "cpuUsage": {
+          "type": "number",
+          "format": "double"
+        },
+        "diskTotalSpace": {
+          "type": "number",
+          "format": "double"
+        },
+        "diskFreeSpace": {
+          "type": "number",
+          "format": "double"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "shutdown": {
+          "type": "boolean"
+        },
+        "unreachable": {
+          "type": "boolean"
+        },
+        "failed": {
+          "type": "boolean"
+        },
+        "booting": {
+          "type": "boolean"
+        }
+      }
+    },
+    "instanceConfig": {
+      "type": "object",
+      "properties": {
+        "serviceId": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "loadBalancerWeights": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "loadBalancerType": {
+          "type": "string",
+          "enum": [
+            "WEIGHTED_RANDOM",
+            "UNKNOWN"
+          ]
+        },
+        "CircuitBreakerConfiguration": {
+          "type": "object",
+          "properties": {
+            "circuitBreakerName": {
+              "type": "string"
+            },
+            "registerHealthIndicator": {
+              "type": "boolean"
+            },
+            "permittedNumberOfCallsInHalfOpenState": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "waitDurationInOpenState": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "slowCallDurationThreshold": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "slowCallRateThreshold": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "failureRateThreshold": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "eventConsumerBufferSize": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "minimumNumberOfCalls": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "slidingWindowSize": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "slidingWindowType": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

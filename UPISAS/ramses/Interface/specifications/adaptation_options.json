@@ -1,0 +1,61 @@
+{
+  "server_number": {
+    "values": ["remove", "add"],
+    "domain": "categorical",
+    "description": "Action to modify server count"
+  },
+  "load_balance_weight": {
+    "start": 0.00,
+    "stop": 1.00,
+    "domain": "continuous",
+    "description": "Load balancer weight for each server instance"
+  },
+  "circuit_breaker": {
+    "values": {
+      "requestVolumeThreshold": {
+        "start": 10,
+        "stop": 50,
+        "domain": "discrete",
+        "description": "Minimum number of requests required before circuit can trip"
+      },
+      "errorThresholdPercentage": {
+        "start": 10,
+        "stop": 90,
+        "domain": "discrete",
+        "description": "Error percentage to trip circuit"
+      },
+      "sleepWindowInMilliseconds": {
+        "start": 1000,
+        "stop": 10000,
+        "domain": "discrete",
+        "description": "Time before retry attempts after circuit opens"
+      }
+    },
+    "domain": "composite",
+    "description": "Circuit breaker configuration parameters"
+  },
+  "timeouts": {
+    "values": {
+      "connectionTimeout": {
+        "start": 100,
+        "stop": 5000,
+        "domain": "discrete",
+        "description": "Connection timeout in milliseconds"
+      },
+      "readTimeout": {
+        "start": 500,
+        "stop": 10000,
+        "domain": "discrete",
+        "description": "Read timeout in milliseconds"
+      },
+      "writeTimeout": {
+        "start": 500,
+        "stop": 10000,
+        "domain": "discrete",
+        "description": "Write timeout in milliseconds"
+      }
+    },
+    "domain": "composite",
+    "description": "Timeout configuration parameters"
+  }
+}
