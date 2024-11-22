@@ -4,6 +4,15 @@ import time
 from UPISAS.exemplar import Exemplar
 from UPISAS.exemplars.ramses import RAMSES
 
+
+
+if __name__ == '__main__':
+    exemplar = RAMSES(auto_start=True)
+    time.sleep(30)  # Allow some time for the container to start
+    exemplar.start_run()
+    time.sleep(3)  # Allow some time for the API endpoints to initialize
+
+'''
 class ReactiveAdaptationManager:
     """
     Placeholders for the reactive adaptation manager.
@@ -39,11 +48,6 @@ class ReactiveAdaptationManager:
         print("Executing adaptation...")
 
 
-if __name__ == '__main__':
-    exemplar = RAMSES(auto_start=True, container_name="ramses")
-    time.sleep(3)  # Allow some time for the container to start
-    exemplar.start_run()
-    time.sleep(3)  # Allow some time for the API endpoints to initialize
 
     try:
         strategy = ReactiveAdaptationManager(exemplar)
@@ -71,3 +75,4 @@ if __name__ == '__main__':
         print(f"Error or interruption: {str(e)}")
         exemplar.stop_container()
         sys.exit(0)
+'''

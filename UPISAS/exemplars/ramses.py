@@ -12,10 +12,10 @@ class RAMSES(Exemplar):
     A class which encapsulates a self-adaptive exemplar run in a docker container.
     """
     _container_name = ""
-    def __init__(self, auto_start=True, container_name = "upisas"):
-        self.base_endpoint = "http://localhost:50000"
-        #self.ramses_dir_path = os.path.join(os.path.dirname(__file__), "..", "ramses")
-        self.ramses_dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "ramses")) #absolute path used to avoid issues when running the script from different locations
+    def __init__(self, auto_start=True):
+        self.base_endpoint = "http://127.0.0.1:50000"
+        self.ramses_dir_path = os.path.join(os.path.dirname(__file__), "..", "ramses")
+        #self.ramses_dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "ramses")) #absolute path used to avoid issues when running the script from different locations
 
         if auto_start:
             self.start_container()
@@ -24,7 +24,7 @@ class RAMSES(Exemplar):
         try:
             ramses_interface_path = os.path.join(self.ramses_dir_path, "Interface")
             subprocess.Popen(
-                ['python3', 'api.py'],  
+                ['python', 'api.py'],  
                 cwd=ramses_interface_path 
             )
 
@@ -53,6 +53,7 @@ class RAMSES(Exemplar):
             logging.error(f"Failed to stop the docker containers: {e}")
             raise
     
+    '''
     def pause_container(self):
         """
         Pauses the container.
@@ -95,4 +96,4 @@ class RAMSES(Exemplar):
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to get status for container '{self.container_name}': {e}")
             raise
-    
+ '''   

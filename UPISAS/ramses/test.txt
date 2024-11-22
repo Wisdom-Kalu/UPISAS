@@ -5,7 +5,8 @@ services:
     image: giamburrasca/mysql:${ARCH}
     container_name: mysql
     ports:
-      - "32829:3306"
+      - "55026:3306" 
+      - "55027:33060"
     networks:
       - ramses-sas-net
     restart: always
@@ -14,7 +15,7 @@ services:
     image: giamburrasca/sefa-eureka:${ARCH}
     container_name: sefa-eureka
     ports:
-      - "32830:58082"
+      - "55028:58082"
     networks:
       - ramses-sas-net
     restart: always
@@ -27,7 +28,7 @@ services:
     depends_on:
       - sefa-eureka
     ports:
-      - "32831:58888"
+      - "55029:58888"
     networks:
       - ramses-sas-net
     restart: always
@@ -37,15 +38,10 @@ services:
     container_name: sefa-restaurant-service
     depends_on:
       - sefa-configserver
-      - sefa-eureka
     ports:
-      - "32847:58085"
+      - "55030:58085"
     networks:
       - ramses-sas-net
-    environment:
-      - SPRING_CLOUD_CONFIG_URI=http://sefa-configserver:58888
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://sefa-eureka:58082/eureka
-      - SPRING_CONFIG_IMPORT=optional:configserver:http://sefa-configserver:58888
     restart: always
 
   sefa-ordering-service:
@@ -53,14 +49,10 @@ services:
     container_name: sefa-ordering-service
     depends_on:
       - sefa-configserver
-      - sefa-eureka
     ports:
-      - "32833:58086"
+      - "55031:58086"
     networks:
       - ramses-sas-net
-    environment:
-      - SPRING_CLOUD_CONFIG_URI=http://sefa-configserver:58888
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://sefa-eureka:58082/eureka
     restart: always
 
   sefa-payment-proxy-1-service:
@@ -69,7 +61,7 @@ services:
     depends_on:
       - sefa-configserver
     ports:
-      - "32834:58090"
+      - "55032:58090"
     networks:
       - ramses-sas-net
     restart: always
@@ -80,7 +72,7 @@ services:
     depends_on:
       - sefa-configserver
     ports:
-      - "32835:58095"
+      - "55033:58095"
     networks:
       - ramses-sas-net
     restart: always
@@ -91,7 +83,7 @@ services:
     depends_on:
       - sefa-configserver
     ports:
-      - "32836:58080"  # Adjust the port mapping if necessary
+      - "55034:58080" 
     networks:
       - ramses-sas-net
     restart: always
@@ -102,7 +94,7 @@ services:
     depends_on:
       - sefa-configserver
     ports:
-      - "32837:58081" 
+      - "55035:58081"
     networks:
       - ramses-sas-net
     restart: always
@@ -111,7 +103,7 @@ services:
     image: giamburrasca/sefa-probe:${ARCH}
     container_name: sefa-probe
     ports:
-      - "32838:58020"
+      - "55036:58020"
     networks:
       - ramses-sas-net
     restart: always
@@ -120,7 +112,7 @@ services:
     image: giamburrasca/sefa-instances-manager:${ARCH}
     container_name: sefa-instances-manager
     ports:
-      - "32839:58015"
+      - "55047:58011"
     networks:
       - ramses-sas-net
     restart: always
@@ -132,7 +124,7 @@ services:
       GITHUB_OAUTH: ${GITHUB_OAUTH}
       GITHUB_REPOSITORY_URL: ${GITHUB_REPOSITORY_URL}
     ports:
-      - "32840:58016"
+      - "55038:58016"
     networks:
       - ramses-sas-net
     restart: always
@@ -141,7 +133,7 @@ services:
     image: giamburrasca/ramses-knowledge:${ARCH}
     container_name: ramses-knowledge
     ports:
-      - "32841:58005"
+      - "55039:58005"
     networks:
       - ramses-sas-net
     restart: always
@@ -150,7 +142,7 @@ services:
     image: giamburrasca/ramses-analyse:${ARCH}
     container_name: ramses-analyse
     ports:
-      - "32842:58002"
+      - "55040:58002"
     networks:
       - ramses-sas-net
     restart: always
@@ -159,7 +151,7 @@ services:
     image: giamburrasca/ramses-execute:${ARCH}
     container_name: ramses-execute
     ports:
-      - "32843:58004"
+      - "55041:58004"
     networks:
       - ramses-sas-net
     restart: always
@@ -168,7 +160,7 @@ services:
     image: giamburrasca/ramses-monitor:${ARCH}
     container_name: ramses-monitor
     ports:
-      - "32844:58001"
+      - "55046:58001"
     networks:
       - ramses-sas-net
     restart: always
@@ -177,7 +169,7 @@ services:
     image: giamburrasca/ramses-dashboard:${ARCH}
     container_name: ramses-dashboard
     ports:
-      - "32845:58000"  # Adjust the port mapping if necessary
+      - "55049:58000" 
     networks:
       - ramses-sas-net
     restart: always
@@ -186,7 +178,7 @@ services:
     image: giamburrasca/ramses-plan:arm64
     container_name: ramses-plan
     ports:
-      - "32846:58003"
+      - "55044:58003"
     networks:
       - ramses-sas-net
     restart: always
@@ -230,3 +222,4 @@ services:
 
 networks:
   ramses-sas-net:
+    driver: bridge
