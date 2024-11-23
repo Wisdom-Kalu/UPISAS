@@ -21,6 +21,7 @@ SEFA_INSTANCE_MANAGER = 32839
 
 #port 55012 is the port of sefa-config-manager
 SEFA_CONFIG_MANAGER = 55038
+#SEFA_CONFIG_MANAGER = 32840
 
 
 @dataclass

@@ -3,14 +3,40 @@ import sys
 import time
 from UPISAS.exemplar import Exemplar
 from UPISAS.exemplars.ramses import RAMSES
+from UPISAS.strategies.ramses_reactive_strategy import ReactiveAdaptationManager
+
 
 
 
 if __name__ == '__main__':
     exemplar = RAMSES(auto_start=True)
+    # URLs for the monitor and execute endpoints
+    monitor_url = "http://127.0.0.1:50000/monitor"
+    execute_url = "http://127.0.0.1:50000/execute"
+
     time.sleep(30)  # Allow some time for the container to start
     exemplar.start_run()
-    time.sleep(3)  # Allow some time for the API endpoints to initialize
+    time.sleep(5)  # Allow some time for the API endpoints to initialize
+
+    try:
+        strategy = ReactiveAdaptationManager(exemplar, monitor_url, execute_url)
+
+        #strategy.get_monitor_schema()
+        #strategy.get_adaptation_options_schema()
+        #strategy.get_execute_schema()
+
+        while True:
+            input("Try to adapt? (yes/no): ")
+            strategy.run()
+            #if strategy.analyze():
+                #if strategy.plan():
+                    #strategy.execute()
+            
+    except (Exception, KeyboardInterrupt) as e:
+        print(str(e))
+        input("something went wrong")
+        exemplar.stop_container()
+        sys.exit(0)
 
 '''
 class ReactiveAdaptationManager:
