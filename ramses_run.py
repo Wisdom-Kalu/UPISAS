@@ -14,9 +14,9 @@ if __name__ == '__main__':
     monitor_url = "http://127.0.0.1:50000/monitor"
     execute_url = "http://127.0.0.1:50000/execute"
 
-    time.sleep(60)  # Allow some time for the container to start
+    time.sleep(20)  # Allow some time for the container to start
     exemplar.start_run()
-    time.sleep(50)  # Allow some time for the API endpoints to initialize
+    time.sleep(10)  # Allow some time for the API endpoints to initialize
 
     try:
         strategy = ReactiveAdaptationManager(exemplar, monitor_url, execute_url)
