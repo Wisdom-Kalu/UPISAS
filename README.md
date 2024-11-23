@@ -10,3 +10,5 @@ navigate to the root directory of this project and run the following command:
 NOTE: If you are using an older version of python, please change python3 to just python. So you will instaed run: 
 
 `python ramses_run.py`
+
+Please create a .env file in UPISAS\ramses and replace the field according to the exampleEnv

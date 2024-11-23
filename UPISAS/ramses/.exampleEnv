@@ -1,0 +1,3 @@
+GITHUB_REPOSITORY_URL="URL to the repository of config server"
+GITHUB_OAUTH="personal token"
+ARCH='architecture'
