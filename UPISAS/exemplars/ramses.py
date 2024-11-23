@@ -27,7 +27,6 @@ class RAMSES(Exemplar):
                 ['python', 'api.py'],  
                 cwd=ramses_interface_path 
             )
-
             logging.info("RAMSES API endpoints successfully started")
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to start RAMSES API endpoints: {e}")
