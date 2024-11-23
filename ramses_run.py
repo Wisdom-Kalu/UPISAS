@@ -26,7 +26,7 @@ if __name__ == '__main__':
         #strategy.get_execute_schema()
 
         while True:
-            input("Try to adapt? (yes/no): ")
+            #input("Try to adapt? (yes/no): ")
             strategy.run()
             #if strategy.analyze():
                 #if strategy.plan():

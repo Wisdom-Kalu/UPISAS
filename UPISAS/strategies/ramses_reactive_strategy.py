@@ -7,31 +7,74 @@ import json
 #This is a port of the ReactiveAdaptationManager originally published alongside SWIM.
 class ReactiveAdaptationManager(Strategy):
    
-    def analyze(self, service_data):
+    def analyze(self):
+
         """
-        Analyzes the data to check for failures.
+        Analyzes the monitored data from Knowledge to identify failed instances.
+        Updates analysis results in Knowledge.
         """
+        monitored_data = self.knowledge.monitored_data
         failed_instances = []
-        for snapshot in service_data.get("snapshot", []):
-            if snapshot["failed"] or snapshot["unreachable"]:
-                failed_instances.append(snapshot["instanceId"])
-        return failed_instances
+
+        for service_id, service_data in monitored_data.items():
+            for snapshot in service_data.get("snapshot", []):
+                instance_id = snapshot.get("instanceId")
+                if snapshot["failed"] or snapshot["unreachable"]:
+                    failed_instances.append(instance_id)
+
+        # Update analysis results in Knowledge
+        self.knowledge.analysis_data = {
+            "failed_instances": failed_instances
+        }
     
 
     
-    def plan(self, failed_instances):
+    def plan(self):
+
         """
-        Plans actions to handle failed instances.
+        Plans actions based on the analysis data in Knowledge and updates the plan in Knowledge.
         """
+        analysis_data = self.knowledge.analysis_data
+        failed_instances = analysis_data.get("failed_instances", [])
         actions = []
+
         if failed_instances:
             actions.append({
                 "operation": "addInstances",
                 "serviceImplementationName": "ordering-service",
-                "numberOfInstances": 1  # Add one instance for simplicity
+                "numberOfInstances": len(failed_instances) 
             })
-        return actions
+        
+        # Update planned actions in Knowledge
+        self.knowledge.plan_data = actions
     
+    def run(self):
+        """
+        Executes the MAPE-K loop.
+        """
+        while True:
+            input("Try to adapt? (yes/no): ")
+
+            print("Running MAPE-K loop...")
+            
+            # Monitor phase
+            self.monitor(verbose=True)
+            
+            # Analyze phase
+            self.analyze()
+            
+            # Plan phase
+            actions = self.plan()
+            print(f"Planned actions: {actions}")
+            
+            # Execute phase
+            self.execute(actions)
+            
+            # Sleep before next loop iteration
+            time.sleep(10)
+
+    
+    '''
     def run(self):
         """
         Executes the MAPE-K loop.
@@ -67,3 +110,4 @@ class ReactiveAdaptationManager(Strategy):
             
             # Sleep before next loop iteration
             time.sleep(10)
+'''
