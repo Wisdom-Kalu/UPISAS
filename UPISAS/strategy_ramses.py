@@ -19,19 +19,74 @@ class Strategy(ABC):
         self.monitor_url = monitor_url
         self.execute_url = execute_url
         self.exemplar = exemplar
-        self.knowledge = Knowledge(dict(), dict(), dict(), dict())  
+        self.knowledge = Knowledge(dict(), dict(), dict(), dict())  #Initializing the knowledge class to hold information from monitor(), analyze(), plan() and execute() functions
 
     def monitor(self, verbose=False):
         """
-        Fetches monitoring data from the API and updates the knowledge base.
+        Fetches monitoring data from the API, ensures consistency for httpMetrics and CircuitBreakerMetrics,
+        and updates the knowledge base.
         """
         try:
             response = requests.get(self.monitor_url)
             response.raise_for_status()
             data = response.json()
+
+            # Populate missing httpMetrics and CircuitBreakerMetrics with default structure and static data obtained from running the project in the SEAMS_ARTIFACT
+            # This is because the httpMetrics was returning an empty json object, making it impossible for us to calculate the response time and availabiliy
+            for service_id, service_data in data.items():
+                for snapshot in service_data.get("snapshot", []):
+                    # Ensure httpMetrics exists
+                    if "httpMetrics" not in snapshot or not snapshot["httpMetrics"]: 
+                        snapshot["httpMetrics"] = {
+                            "default-endpoint": {
+                                "id": None,
+                                "endpoint": "default",
+                                "httpMethod": "GET",
+                                "outcomeMetrics": {
+                                    "SUCCESS": {
+                                        "outcome": "SUCCESS",
+                                        "status": 200,
+                                        "count": 0,
+                                        "totalDuration": 0.0,
+                                        "maxDuration": 0.0
+                                    }
+                                }
+                            }
+                        }
+                        #if verbose:
+                            #print(f"Added default httpMetrics for {snapshot.get('instanceId', 'unknown')}")
+
+                    # Ensure circuitBreakerMetrics exists
+                    if "circuitBreakerMetrics" not in snapshot or not snapshot["circuitBreakerMetrics"]:
+                        snapshot["circuitBreakerMetrics"] = {
+                            "default-circuit": {
+                                "id": None,
+                                "name": "default",
+                                "state": "CLOSED",
+                                "bufferedCallsCount": {"FAILED": 0, "SUCCESSFUL": 0},
+                                "callDuration": {"FAILED": 0.0, "IGNORED": 0.0, "SUCCESSFUL": 0.0},
+                                "callMaxDuration": {"FAILED": 0.0, "IGNORED": 0.0, "SUCCESSFUL": 0.0},
+                                "callCount": {"FAILED": 0, "IGNORED": 0, "SUCCESSFUL": 0},
+                                "slowCallCount": {"FAILED": 0, "SUCCESSFUL": 0},
+                                "notPermittedCallsCount": 0,
+                                "failureRate": -1,
+                                "slowCallRate": -1,
+                                "totalCallsCount": 0
+                            }
+                        }
+                        #if verbose:
+                            #print(f"Added default circuitBreakerMetrics for {snapshot.get('instanceId', 'unknown')}")
+
+            # Store the monitoring data in Knowledge
             self.knowledge.monitored_data = data
+
+            if verbose:
+                print("Monitoring data updated:")
+                #print(json.dumps(data, indent=2))
+
         except requests.RequestException as e:
             print(f"Monitoring failed: {e}")
+
 
 
     def execute(self):

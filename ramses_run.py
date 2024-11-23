@@ -1,6 +1,43 @@
 import signal
 import sys
 import time
+from threading import Thread
+from UPISAS.exemplar import Exemplar
+from UPISAS.exemplars.ramses import RAMSES
+from UPISAS.strategies.ramses_reactive_strategy import ReactiveAdaptationManager
+from failure_injection import FailureInjector
+
+if __name__ == '__main__':
+    exemplar = RAMSES(auto_start=True)
+    monitor_url = "http://127.0.0.1:50000/monitor"
+    execute_url = "http://127.0.0.1:50000/execute"
+
+    #failure_injector = FailureInjector()
+    #failure_injector_thread = Thread(target=failure_injector.inject_failures)
+    #failure_injector_thread.start()
+
+    time.sleep(20)  # Allow some time for the container to start
+    exemplar.start_run()
+    time.sleep(10)  # Allow some time for the API endpoints to initialize
+
+    try:
+        strategy = ReactiveAdaptationManager(exemplar, monitor_url, execute_url)
+
+        while True:
+            strategy.run()
+            
+    except (Exception, KeyboardInterrupt) as e:
+        print(str(e))
+        input("Something went wrong. Press Enter to exit.")
+        exemplar.stop_container()
+        sys.exit(0)
+
+
+
+'''
+import signal
+import sys
+import time
 from UPISAS.exemplar import Exemplar
 from UPISAS.exemplars.ramses import RAMSES
 from UPISAS.strategies.ramses_reactive_strategy import ReactiveAdaptationManager
@@ -38,7 +75,7 @@ if __name__ == '__main__':
         exemplar.stop_container()
         sys.exit(0)
 
-'''
+
 class ReactiveAdaptationManager:
     """
     Placeholders for the reactive adaptation manager.
