@@ -37,7 +37,7 @@ class RAMSES(Exemplar):
     def start_container(self):
         try:
             subprocess.run( ['docker', 'compose', 'up', '-d'], cwd = self.ramses_dir_path, check = True )
-            logging.info ("Docker container is now started and running successfully...")
+            logging.info ("Docker container started successfully. Please wait for the APIs and container to initialize properly...")
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to start the docker containers: {e}")
             raise
