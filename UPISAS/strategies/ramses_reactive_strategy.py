@@ -69,7 +69,7 @@ class ReactiveAdaptationManager(Strategy):
             print(f"Planned actions: {actions}")
             
             # Execute phase
-            self.execute(actions)
+            self.execute()
             
             # Sleep before next loop iteration
             time.sleep(10)
