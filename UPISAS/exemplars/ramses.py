@@ -24,7 +24,7 @@ class RAMSES(Exemplar):
         try:
             ramses_interface_path = os.path.join(self.ramses_dir_path, "Interface")
             subprocess.Popen(
-                ['python', 'api.py'],  
+                ['python3', 'api.py'],  
                 cwd=ramses_interface_path 
             )
             logging.info("RAMSES API endpoints successfully started")

@@ -36,7 +36,7 @@ class RunnerConfig:
     exemplar = None
     strategy = None
 
-    def _init_(self):
+    def __init__(self):
         """Executes on program start and config load."""
         EventSubscriptionController.subscribe_to_multiple_events([
             (RunnerEvents.BEFORE_EXPERIMENT, self.before_experiment),
@@ -58,7 +58,7 @@ class RunnerConfig:
         self.run_table_model = RunTableModel(
             factors=[factor1],
             exclude_variations=[],
-            data_columns=['Availability', 'ResponseTime']
+            data_columns=['availaility', 'avg_response_time']
         )
         return self.run_table_model
 
@@ -75,7 +75,7 @@ class RunnerConfig:
 
     def start_run(self, context: RunnerContext) -> None:
         """Initialize parameters and start the target system for measurement."""
-        self.strategy.failure_rate_threshold = float(context.run_variation['failure_threshold'])
+        #self.strategy.failure_rate_threshold = float(context.run_variation['failure_threshold'])
         self.exemplar.start_run() #-------------------
         time.sleep(3)  # Allow time for stabilization
         output.console_log("Config.start_run() called!")
