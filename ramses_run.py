@@ -1,21 +1,19 @@
 import signal
 import sys
 import time
+from threading import Thread
 from UPISAS.exemplar import Exemplar
 from UPISAS.exemplars.ramses import RAMSES
 from UPISAS.strategies.ramses_reactive_strategy import ReactiveAdaptationManager
 from failure_injection import FailureInjector
-from threading import Thread
 
 if __name__ == '__main__':
     exemplar = RAMSES(auto_start=True)
     monitor_url = "http://127.0.0.1:50000/monitor"
     execute_url = "http://127.0.0.1:50000/execute"
 
-    # Initialize Failure Injector
+    # Initialize and start the Failure Injector
     failure_injector = FailureInjector()
-
-    # Run the Failure Injector in a separate thread
     failure_injector_thread = Thread(target=failure_injector.inject_failures)
     failure_injector_thread.start()
 
@@ -34,6 +32,7 @@ if __name__ == '__main__':
         input("Something went wrong. Press Enter to exit.")
         exemplar.stop_container()
         sys.exit(0)
+
 
 
 '''
