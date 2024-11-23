@@ -40,7 +40,6 @@ class ReactiveAdaptationManager(Strategy):
 
         if failed_instances:
             print(f"Failed instances detected: {failed_instances}")
-            print("Planned actions: addInstance")
             actions.append({
                 "operation": "addInstances",
                 "serviceImplementationName": "ordering-service",
