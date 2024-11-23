@@ -9,8 +9,8 @@ class ReactiveAdaptationManager(Strategy):
 
     def analyze(self):
         """
-        Analyzes the monitored data from Knowledge to identify failed instances.
-        Updates analysis results in Knowledge and calculates average response time and availability.
+        Analyzes the monitored data from Knowledge to calculate average response time and availability.
+        Updates analysis results in Knowledge.
         """
         monitored_data = self.knowledge.monitored_data
         failed_instances = []
@@ -34,7 +34,7 @@ class ReactiveAdaptationManager(Strategy):
                     response_time_sum += success_metrics.get("totalDuration", 0)
                     response_time_count += success_metrics.get("count", 0)
 
-                # Calculate availability
+                # Calculate availability from circuitBreakerMetrics
                 circuit_metrics = snapshot.get("circuitBreakerMetrics", {})
                 for _, metrics in circuit_metrics.items():
                     total_requests += metrics.get("totalCallsCount", 0)
@@ -63,6 +63,7 @@ class ReactiveAdaptationManager(Strategy):
             print(f"Warning: Average Response Time exceeds threshold ({response_time_threshold} ms).")
         if availability < availability_threshold:
             print(f"Warning: Availability below threshold ({availability_threshold}%).")
+
 
     def plan(self):
         """
