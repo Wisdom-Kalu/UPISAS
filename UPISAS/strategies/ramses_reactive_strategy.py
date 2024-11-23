@@ -52,8 +52,9 @@ class ReactiveAdaptationManager(Strategy):
         """
         Executes the MAPE-K loop.
         """
+        input("Try to adapt? (yes/no): ")
+
         while True:
-            input("Try to adapt? (yes/no): ")
 
             print("Running MAPE-K loop...")
             
@@ -68,7 +69,7 @@ class ReactiveAdaptationManager(Strategy):
             print(f"Planned actions: {actions}")
             
             # Execute phase
-            self.execute()
+            self.execute(actions)
             
             # Sleep before next loop iteration
             time.sleep(10)
