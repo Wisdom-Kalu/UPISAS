@@ -39,6 +39,7 @@ class ReactiveAdaptationManager(Strategy):
         actions = []
 
         if failed_instances:
+            print(f"Failed instances detected: {failed_instances}")
             actions.append({
                 "operation": "addInstances",
                 "serviceImplementationName": "ordering-service",
@@ -47,6 +48,7 @@ class ReactiveAdaptationManager(Strategy):
         
         # Update planned actions in Knowledge
         self.knowledge.plan_data = actions
+        
     
     def run(self):
         """
