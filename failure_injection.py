@@ -28,18 +28,18 @@ class FailureInjector:
             }
         ]
 
-    def stop_docker_container(self, instance_id):
+    def pause_docker_container(self, instance_id):
         try:
             container_name = instance_id.split("@")[0]
-            subprocess.run(["docker", "stop", container_name], check=True)
+            subprocess.run(["docker", "pause", container_name], check=True)
             print(f"Stopped container: {container_name}")
         except subprocess.CalledProcessError as e:
             print(f"Error stopping container {instance_id}: {e}")
 
-    def start_docker_container(self, instance_id):
+    def unpause_docker_container(self, instance_id):
         try:
             container_name = instance_id.split("@")[0]
-            subprocess.run(["docker", "start", container_name], check=True)
+            subprocess.run(["docker", "unpause", container_name], check=True)
             print(f"Started container: {container_name}")
         except subprocess.CalledProcessError as e:
             print(f"Error starting container {instance_id}: {e}")
@@ -64,11 +64,11 @@ class FailureInjector:
                 if current_time >= failure["start_time"]:
                     instance_id = failure["instance_id"]
                     print(f"Injecting failure for instance: {instance_id}")
-                    self.stop_docker_container(instance_id)
+                    self.pause_docker_container(instance_id)
 
                     if failure["duration"] > 0:
                         time.sleep(failure["duration"])
                         print(f"Restoring instance: {instance_id}")
-                        self.start_docker_container(instance_id)
+                        self.unpause_docker_container(instance_id)
 
             time.sleep(10)

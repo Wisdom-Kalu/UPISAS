@@ -12,7 +12,6 @@ if __name__ == '__main__':
     monitor_url = "http://127.0.0.1:50000/monitor"
     execute_url = "http://127.0.0.1:50000/execute"
 
-    # Initialize and start the Failure Injector
     failure_injector = FailureInjector()
     failure_injector_thread = Thread(target=failure_injector.inject_failures)
     failure_injector_thread.start()
