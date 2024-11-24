@@ -12,3 +12,9 @@ NOTE: If you are using an older version of python, please change python3 to just
 `python ramses_run.py`
 
 Please create a .env file in UPISAS\ramses and replace the field according to the exampleEnv
+
+
+
+
+![alt text](<Screenshot (10).png>)
+
