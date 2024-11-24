@@ -43,8 +43,8 @@ class ReactiveAdaptationManager(Strategy):
         # Calculate final metrics
         #avg_response_time = response_time_sum / response_time_count if response_time_count > 0 else 0
         #availability = (successful_requests / total_requests) * 100 if total_requests > 0 else 0
-        avg_response_time = 1630.06
-        availability = 100.0
+        avg_response_time = 1630.06 #manually calculated since monitor endpoint was not working
+        availability = 100.0 #manually calculated since monitor endpoint was noyt working
 
         # Update analysis results in Knowledge
         self.knowledge.analysis_data = {
@@ -94,11 +94,11 @@ class ReactiveAdaptationManager(Strategy):
 
         #if avg_response_time > response_time_threshold:
             #print("Planning actions to improve response time...")
-            # Add response-time-specific actions here
+            # TODO: Add response-time-specific actions here
 
         #if availability < availability_threshold:
             #print("Planning actions to improve availability...")
-            # Add availability-specific actions here
+            # TODO: Add availability-specific actions here
 
         # Update planned actions in Knowledge
         self.knowledge.plan_data = actions
