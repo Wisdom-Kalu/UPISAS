@@ -129,8 +129,8 @@ class RunnerConfig:
 
         # Populate the run table with calculated metrics
         return {
-            "Availability": f"{availability:.2f}",
-            "ResponseTime": f"{avg_response_time:.2f}"
+            "availability": f"{availability:.2f}",
+            "avg_response_time": f"{avg_response_time:.2f}"
         }
 
     '''
