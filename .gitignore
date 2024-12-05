@@ -1,1 +1,9 @@
 UPISAS/ramses/.env
+.idea
+demo-managed-system/node_modules
+demo-managed-system/package-lock.json
+venv
+__pycache__
+UPISAS/__pycache__
+UPISAS/experiment_runner_configs/experiments
+UPISAS/.env
