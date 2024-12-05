@@ -9,6 +9,7 @@ services:
     networks:
       - ramses-sas-net
     restart: always
+
   sefa-eureka:
     image: giamburrasca/sefa-eureka:${ARCH}
     ports:
@@ -22,7 +23,8 @@ services:
     ports:
       - "55003:58888"
     environment:
-      GITHUB_REPOSITORY_URL: $(GITHUB_REPOSITORY_URL)
+      GITHUB_REPOSITORY_URL: ${GITHUB_REPOSITORY_URL}
+      GITHUB_OAUTH: $(GITHUB_OAUTH)
     networks:
       - ramses-sas-net
     restart: always
@@ -70,7 +72,7 @@ services:
   sefa-restaurant-service:
     image: giamburrasca/sefa-restaurant-service:${ARCH}
     ports:
-      - "32883:32883"
+      - "55019:58085"
     networks:
       - ramses-sas-net
     restart: always
@@ -96,8 +98,8 @@ services:
     ports:
       - "55012:58016"
     environment:
-      GITHUB_OAUTH: $(GITHUB_OAUTH)
-      GITHUB_REPOSITORY_URL: $(GITHUB_REPOSITORY_URL)
+      GITHUB_OAUTH: ${GITHUB_OAUTH}
+      GITHUB_REPOSITORY_URL: ${GITHUB_REPOSITORY_URL}
     networks:
       - ramses-sas-net
     restart: always

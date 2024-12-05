@@ -14,13 +14,13 @@ adaption_option_file = "specifications/adaptation_options.json"
 adaption_schema_file = "specifications/adaptation_schema.json"
 
 #port 55010 is the port of sefa-probe
-SEFA_PROBE = 32838
+SEFA_PROBE = 55010
 
 #port 55011 is the port of sefa-instances-manager
-SEFA_INSTANCE_MANAGER = 32839
+SEFA_INSTANCE_MANAGER = 55011
 
 #port 55012 is the port of sefa-config-manager
-SEFA_CONFIG_MANAGER = 55038
+SEFA_CONFIG_MANAGER = 55012
 #SEFA_CONFIG_MANAGER = 32840
 
 
