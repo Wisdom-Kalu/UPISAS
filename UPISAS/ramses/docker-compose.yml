@@ -3,153 +3,222 @@ version: '3.8'
 services:
   mysql:
     image: giamburrasca/mysql:${ARCH}
+    container_name: mysql
     ports:
-      - "55000:3306"
-      - "55001:33060"
+      - "32829:3306"
     networks:
       - ramses-sas-net
+    volumes:
+      - ./mysql_data:/var/lib/mysql # Persistent volume for MySQL data
     restart: always
 
   sefa-eureka:
     image: giamburrasca/sefa-eureka:${ARCH}
+    container_name: sefa-eureka
     ports:
-      - "55002:58082"
+      - "32830:58082"
     networks:
       - ramses-sas-net
     restart: always
 
   sefa-configserver:
     image: giamburrasca/sefa-configserver:${ARCH}
-    ports:
-      - "55003:58888"
+    container_name: sefa-configserver
     environment:
       GITHUB_REPOSITORY_URL: ${GITHUB_REPOSITORY_URL}
-      GITHUB_OAUTH: $(GITHUB_OAUTH)
-    networks:
-      - ramses-sas-net
-    restart: always
-
-  sefa-payment-proxy-1-service:
-    image: giamburrasca/sefa-payment-proxy-1-service:${ARCH}
+    depends_on:
+      - sefa-eureka
     ports:
-      - "55006:58090"
-    networks:
-      - ramses-sas-net
-    restart: always
-
-  sefa-delivery-proxy-1-service:
-    image: giamburrasca/sefa-delivery-proxy-1-service:${ARCH}
-    ports:
-      - "55007:58095"
-    networks:
-      - ramses-sas-net
-    restart: always
-
-  sefa-web-service:
-    image: giamburrasca/sefa-web-service:${ARCH}
-    ports:
-      - "55008:58080"
-    networks:
-      - ramses-sas-net
-    restart: always
-
-  sefa-api-gateway:
-    image: giamburrasca/sefa-api-gateway:${ARCH}
-    ports:
-      - "55009:58081"
-    networks:
-      - ramses-sas-net
-    restart: always
-
-  sefa-probe:
-    image: giamburrasca/sefa-probe:${ARCH}
-    ports:
-      - "55010:58020"
+      - "32831:58888"
     networks:
       - ramses-sas-net
     restart: always
 
   sefa-restaurant-service:
     image: giamburrasca/sefa-restaurant-service:${ARCH}
+    container_name: sefa-restaurant-service
+    depends_on:
+      - sefa-configserver
     ports:
-      - "55019:58085"
+      - "32847:58085"
     networks:
       - ramses-sas-net
     restart: always
 
   sefa-ordering-service:
     image: giamburrasca/sefa-ordering-service:${ARCH}
+    container_name: sefa-ordering-service
+    depends_on:
+      - sefa-configserver
     ports:
-      - "34761:34761"
+      - "32833:58086"
+    networks:
+      - ramses-sas-net
+    restart: always
+
+  sefa-payment-proxy-1-service:
+    image: giamburrasca/sefa-payment-proxy-1-service:${ARCH}
+    container_name: sefa-payment-proxy-1-service
+    depends_on:
+      - sefa-configserver
+    ports:
+      - "32834:58090"
+    networks:
+      - ramses-sas-net
+    restart: always
+
+  sefa-delivery-proxy-1-service:
+    image: giamburrasca/sefa-delivery-proxy-1-service:${ARCH}
+    container_name: sefa-delivery-proxy-1-service
+    depends_on:
+      - sefa-configserver
+    ports:
+      - "32835:58095"
+    networks:
+      - ramses-sas-net
+    restart: always
+
+  sefa-web-service:
+    image: giamburrasca/sefa-web-service:${ARCH}
+    container_name: sefa-web-service
+    depends_on:
+      - sefa-configserver
+    ports:
+      - "32836:58080"  # Adjust the port mapping if necessary
+    networks:
+      - ramses-sas-net
+    restart: always
+
+  sefa-api-gateway:
+    image: giamburrasca/sefa-api-gateway:${ARCH}
+    container_name: sefa-api-gateway
+    depends_on:
+      - sefa-configserver
+    ports:
+      - "32837:58081" 
+    networks:
+      - ramses-sas-net
+    restart: always
+
+  sefa-probe:
+    image: giamburrasca/sefa-probe:${ARCH}
+    container_name: sefa-probe
+    ports:
+      - "32838:58020"
     networks:
       - ramses-sas-net
     restart: always
 
   sefa-instances-manager:
     image: giamburrasca/sefa-instances-manager:${ARCH}
+    container_name: sefa-instances-manager
     ports:
-      - "55011:58015"
+      - "32839:58015"
     networks:
       - ramses-sas-net
     restart: always
 
   sefa-config-manager:
     image: giamburrasca/sefa-config-manager:${ARCH}
-    ports:
-      - "55012:58016"
+    container_name: sefa-config-manager
     environment:
       GITHUB_OAUTH: ${GITHUB_OAUTH}
       GITHUB_REPOSITORY_URL: ${GITHUB_REPOSITORY_URL}
+    ports:
+      - "32840:58016"
     networks:
       - ramses-sas-net
     restart: always
 
   ramses-knowledge:
     image: giamburrasca/ramses-knowledge:${ARCH}
+    container_name: ramses-knowledge
     ports:
-      - "55013:58005"
+      - "32841:58005"
     networks:
       - ramses-sas-net
     restart: always
 
   ramses-analyse:
     image: giamburrasca/ramses-analyse:${ARCH}
+    container_name: ramses-analyse
     ports:
-      - "55014:58002"
+      - "32842:58002"
     networks:
       - ramses-sas-net
     restart: always
 
   ramses-execute:
     image: giamburrasca/ramses-execute:${ARCH}
+    container_name: ramses-execute
     ports:
-      - "55015:58004"
+      - "32843:58004"
     networks:
       - ramses-sas-net
     restart: always
 
   ramses-monitor:
     image: giamburrasca/ramses-monitor:${ARCH}
+    container_name: ramses-monitor
     ports:
-      - "55016:58001"
+      - "32844:58001"
     networks:
       - ramses-sas-net
     restart: always
 
   ramses-dashboard:
     image: giamburrasca/ramses-dashboard:${ARCH}
+    container_name: ramses-dashboard
     ports:
-      - "55017:58000"
+      - "32845:58000"  # Adjust the port mapping if necessary
     networks:
       - ramses-sas-net
     restart: always
 
   ramses-plan:
-    image: giamburrasca/ramses-plan:${ARCH}
+    image: giamburrasca/ramses-plan:arm64
+    container_name: ramses-plan
     ports:
-      - "55018:58003"
+      - "32846:58003"
     networks:
       - ramses-sas-net
+    restart: always
+
+  # Simulation scenarios (start them as needed)
+  simulation-scenario-1:
+    image: giamburrasca/scenario1:${ARCH}
+    container_name: simulation-scenario-1
+    networks:
+      - ramses-sas-net
+    deploy:
+      replicas: 0
+    restart: always
+
+  simulation-scenario-2:
+    image: giamburrasca/scenario2:${ARCH}
+    container_name: simulation-scenario-2
+    networks:
+      - ramses-sas-net
+    deploy:
+      replicas: 0
+    restart: always
+
+  simulation-scenario-3:
+    image: giamburrasca/scenario3:${ARCH}
+    container_name: simulation-scenario-3
+    networks:
+      - ramses-sas-net
+    deploy:
+      replicas: 0
+    restart: always
+
+  simulation-scenario-4:
+    image: giamburrasca/scenario4:${ARCH}
+    container_name: simulation-scenario-4
+    networks:
+      - ramses-sas-net
+    deploy:
+      replicas: 0
     restart: always
 
 networks:
