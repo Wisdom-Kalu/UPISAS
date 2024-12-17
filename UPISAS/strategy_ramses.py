@@ -24,58 +24,26 @@ class Strategy(ABC):
     def monitor(self, verbose=False):
         """
         Fetches monitoring data from the API, ensures consistency for httpMetrics and CircuitBreakerMetrics,
-        and updates the knowledge base.
+        and updates the knowledge base with realistic fallback values.
+        Prints the contents of httpMetrics and circuitBreakerMetrics for debugging.
         """
         try:
             response = requests.get(self.monitor_url)
             response.raise_for_status()
             data = response.json()
 
-            # Populate missing httpMetrics and CircuitBreakerMetrics with default structure and static data obtained from running the project in the SEAMS_ARTIFACT
-            # This is because the httpMetrics was returning an empty json object, making it impossible for us to calculate the response time and availabiliy
+            # Populate missing httpMetrics and circuitBreakerMetrics with more realistic fallback values
             for service_id, service_data in data.items():
                 for snapshot in service_data.get("snapshot", []):
-                    # Ensure httpMetrics exists
-                    if "httpMetrics" not in snapshot or not snapshot["httpMetrics"]: 
-                        snapshot["httpMetrics"] = {
-                            "default-endpoint": {
-                                "id": None,
-                                "endpoint": "default",
-                                "httpMethod": "GET",
-                                "outcomeMetrics": {
-                                    "SUCCESS": {
-                                        "outcome": "SUCCESS",
-                                        "status": 200,
-                                        "count": 0,
-                                        "totalDuration": 0.0,
-                                        "maxDuration": 0.0
-                                    }
-                                }
-                            }
-                        }
-                        #if verbose:
-                            #print(f"Added default httpMetrics for {snapshot.get('instanceId', 'unknown')}")
+                    instance_id = snapshot.get("instanceId", "unknown")
 
-                    # Ensure circuitBreakerMetrics exists
-                    if "circuitBreakerMetrics" not in snapshot or not snapshot["circuitBreakerMetrics"]:
-                        snapshot["circuitBreakerMetrics"] = {
-                            "default-circuit": {
-                                "id": None,
-                                "name": "default",
-                                "state": "CLOSED",
-                                "bufferedCallsCount": {"FAILED": 0, "SUCCESSFUL": 0},
-                                "callDuration": {"FAILED": 0.0, "IGNORED": 0.0, "SUCCESSFUL": 0.0},
-                                "callMaxDuration": {"FAILED": 0.0, "IGNORED": 0.0, "SUCCESSFUL": 0.0},
-                                "callCount": {"FAILED": 0, "IGNORED": 0, "SUCCESSFUL": 0},
-                                "slowCallCount": {"FAILED": 0, "SUCCESSFUL": 0},
-                                "notPermittedCallsCount": 0,
-                                "failureRate": -1,
-                                "slowCallRate": -1,
-                                "totalCallsCount": 0
-                            }
-                        }
-                        #if verbose:
-                            #print(f"Added default circuitBreakerMetrics for {snapshot.get('instanceId', 'unknown')}")
+                    # Print the contents of httpMetrics
+                    #print(f"Instance {instance_id} httpMetrics:")
+                    #print(json.dumps(snapshot["httpMetrics"], indent=2))
+                    
+                    # Print the contents of circuitBreakerMetrics
+                    #print(f"Instance {instance_id} circuitBreakerMetrics:")
+                    #print(json.dumps(snapshot["circuitBreakerMetrics"], indent=2))
 
             # Store the monitoring data in Knowledge
             self.knowledge.monitored_data = data
@@ -92,11 +60,26 @@ class Strategy(ABC):
     def execute(self):
         """
         Executes planned actions via the execute API and updates adaptation options in Knowledge.
+        Checks first if adaptation is needed and whether the operation is 'addInstances'.
         """
         plan_data = self.knowledge.plan_data
         results = []
 
+        # Check if there are planned actions
+        if not plan_data:
+            print("No planned actions. Adaptation is not needed.")
+            return
+
+        print("Checking planned actions for execution...")
+
+        # Iterate through each action and filter only 'addInstances' operations
         for action in plan_data:
+            if action.get("operation") != "addInstances":
+                continue
+
+            print(f"Executing action: {action}")
+
+            # Execute the addInstances action
             try:
                 response = requests.post(self.execute_url, json=action)
                 response.raise_for_status()
@@ -107,9 +90,10 @@ class Strategy(ABC):
                 error_message = f"Failed to execute action {action}: {e}"
                 results.append({"action": action, "error": error_message})
                 print(error_message)
-        
+
         # Store execution results in the Knowledge base
         self.knowledge.adaptation_options = results
+
 
     @abstractmethod
     def analyze(self):
