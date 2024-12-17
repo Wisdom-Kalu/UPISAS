@@ -5,7 +5,7 @@ from threading import Thread
 from UPISAS.exemplar import Exemplar
 from UPISAS.exemplars.ramses import RAMSES
 from UPISAS.strategies.ramses_reactive_strategy import ReactiveAdaptationManager
-from failure_injection import FailureInjector
+# from failure_injection import FailureInjector
 
 if __name__ == '__main__':
     exemplar = RAMSES(auto_start=True)
