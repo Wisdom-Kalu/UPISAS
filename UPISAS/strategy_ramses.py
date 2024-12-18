@@ -21,6 +21,7 @@ class Strategy(ABC):
         self.exemplar = exemplar
         self.knowledge = Knowledge(dict(), dict(), dict(), dict())  #Initializing the knowledge class to hold information from monitor(), analyze(), plan() and execute() functions
 
+
     def monitor(self, verbose=False):
         """
         Fetches monitoring data from the API, ensures consistency for httpMetrics and CircuitBreakerMetrics,
@@ -29,6 +30,7 @@ class Strategy(ABC):
         """
         try:
             response = requests.get(self.monitor_url)
+            #TODO: Validate schema 
             response.raise_for_status()
             data = response.json()
 
@@ -56,44 +58,59 @@ class Strategy(ABC):
             print(f"Monitoring failed: {e}")
 
 
-
     def execute(self):
         """
-        Executes planned actions via the execute API and updates adaptation options in Knowledge.
-        Checks first if adaptation is needed and whether the operation is 'addInstances'.
+        Executes planned actions via the execute API. Handles both 'addInstances' and 'changeLBWeights' operations.
         """
         plan_data = self.knowledge.plan_data
+        load_balancer_adjustments = self.knowledge.adaptation_options
         results = []
 
         # Check if there are planned actions
-        if not plan_data:
-            print("No planned actions. Adaptation is not needed.")
+        if not plan_data and not load_balancer_adjustments:
+            print("No planned actions. No adaptation required at this time.")
             return
 
         print("Checking planned actions for execution...")
 
-        # Iterate through each action and filter only 'addInstances' operations
+        # Execute addInstances actions
         for action in plan_data:
-            if action.get("operation") != "addInstances":
-                continue
+            if action.get("operation") == "addInstances":
+                print(f"Executing addInstances action: {action}")
+                try:
+                    response = requests.post(self.execute_url, json=action)
+                    response.raise_for_status()
+                    result = response.json()
+                    results.append(result)
+                    print(f"Instance added successfully: {result}")
+                except requests.RequestException as e:
+                    error_message = f"Failed to execute addInstances action {action}: {e}"
+                    results.append({"action": action, "error": error_message})
+                    print(error_message)
 
-            print(f"Executing action: {action}")
-
-            # Execute the addInstances action
-            try:
-                response = requests.post(self.execute_url, json=action)
-                response.raise_for_status()
-                result = response.json()
-                results.append(result)
-                print(f"Action executed successfully: {result}")
-            except requests.RequestException as e:
-                error_message = f"Failed to execute action {action}: {e}"
-                results.append({"action": action, "error": error_message})
-                print(error_message)
+        # Execute changeLBWeights actions
+        for adjustment in load_balancer_adjustments:
+            if adjustment.get("operation") == "changeLBWeights":
+                print(f"Executing changeLBWeights action: {adjustment}")
+                try:
+                    # Construct the request body as per the specified API
+                    lb_request_body = {
+                        "serviceID": adjustment.get("serviceID"),
+                        "newWeights": adjustment.get("newWeights"),
+                        "instancesToRemoveWeightOf": adjustment.get("instancesToRemoveWeightOf", [])
+                    }
+                    response = requests.post(self.execute_url, json=lb_request_body)
+                    response.raise_for_status()
+                    result = response.json()
+                    results.append(result)
+                    print(f"Load balancer weights updated successfully: {result}")
+                except requests.RequestException as e:
+                    error_message = f"Failed to execute changeLBWeights action {adjustment}: {e}"
+                    results.append({"adjustment": adjustment, "error": error_message})
+                    print(error_message)
 
         # Store execution results in the Knowledge base
         self.knowledge.adaptation_options = results
-
 
     @abstractmethod
     def analyze(self):

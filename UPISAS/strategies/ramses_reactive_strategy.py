@@ -75,8 +75,6 @@ class ReactiveAdaptationManager(Strategy):
         return avg_response_time, availability
 
 
-    
-
     def analyze(self):
         """
         Analyzes the monitored data from Knowledge to calculate metrics and identify failures.
@@ -125,8 +123,8 @@ class ReactiveAdaptationManager(Strategy):
             avg_response_time, availability = self.compute_metrics_window(snapshot, oldest_snapshot)
 
             # Print intermediate results (for debugging only)
-            print(f"  Avg Response Time (Instance): {avg_response_time}")
-            print(f"  Availability (Instance): {availability}")
+            #print(f"  Avg Response Time (Instance): {avg_response_time}")
+            #print(f"  Availability (Instance): {availability}")
 
             # Aggregate response time
             if avg_response_time > 0:
@@ -146,11 +144,6 @@ class ReactiveAdaptationManager(Strategy):
         # Calculate final average metrics
         avg_response_time = total_avg_response_time / active_service_count_response_time if active_service_count_response_time > 0 else 0
         availability = total_availability / active_service_count_availability if active_service_count_availability > 0 else None
-
-        # For debugging only
-        print("\nFinal Aggregated Metrics:")
-        print(f"  Total Avg Response Time: {avg_response_time}")
-        print(f"  Total Availability: {availability}")
 
 
         # Update analysis results in Knowledge
@@ -181,31 +174,46 @@ class ReactiveAdaptationManager(Strategy):
     def plan(self):
         """
         Plans actions based on the analysis data in Knowledge and updates the plan in Knowledge.
-        Dynamically determines which service requires a new instance.
+        Dynamically determines which service requires a new instance and whether load balancer weights need adjustment.
         """
         analysis_data = self.knowledge.analysis_data
         failed_instances = analysis_data.get("failed_instances", {})
         actions = []
+        load_balancer_adjustments = []
 
         if failed_instances:
-            print(f"Failed instances detected: {json.dumps(failed_instances, indent=2)}")
             for service_id, instances in failed_instances.items():
                 # Get the service implementation name dynamically
                 service_implementation_name = self.knowledge.monitored_data.get(service_id, {}).get("currentImplementationId", None)
+                sibling_instances = self.knowledge.monitored_data.get(service_id, {}).get("instances", [])
+
                 if service_implementation_name:
-                    for instance in instances:
+                    if len(sibling_instances) == len(instances):  # All instances failed
+                        print(f"All instances of {service_id} failed. Adding a new instance.")
                         actions.append({
                             "operation": "addInstances",
                             "serviceImplementationName": service_implementation_name,
                             "numberOfInstances": 1
                         })
-                        # Add to processed failed instances to avoid duplicate actions
+                    else:  # Some instances are still alive
+                        print(f"Some instances of {service_id} are still alive. Reconfiguring load balancer.")
+                        alive_instances = [inst for inst in sibling_instances if inst not in instances]
+                        load_balancer_adjustments.append({
+                            "serviceID": service_id,
+                            "newWeights": {instance: 1.0 / len(alive_instances) if len(alive_instances) > 0 else 0 for instance in alive_instances}, #I added an if statement  fallback for cases where len(alive_instances) is 0 in load balancer calculations to avoid division errors
+                            "instancesToRemoveWeightOf": instances
+                        })
+
+                    # Add failed instances to processed set
+                    for instance in instances:
                         self.processed_failed_instances.add(instance)
+
                 else:
                     print(f"Warning: Could not determine serviceImplementationName for service {service_id}")
 
-        # Update planned actions in Knowledge
+        # Update planned actions and load balancer adjustments in Knowledge
         self.knowledge.plan_data = actions
+        self.knowledge.adaptation_options = load_balancer_adjustments
 
     
     def run(self):
@@ -217,19 +225,22 @@ class ReactiveAdaptationManager(Strategy):
         while True:
 
             print("Running MAPE-K loop...")
+            input("try to adapt?")
             
             # Monitor phase
             self.monitor(verbose=True)
+            self.analyze()
+            self.plan()
+            self.execute()
             
             # Analyze phase
-            self.analyze()
+            #if self.analyze():
             
-            # Plan phase
-            actions = self.plan()
-            #print(f"Planned actions: {self.knowledge.plan_data}")
+                # Plan phase
+                #if self.plan():
             
-            # Execute phase
-            self.execute()
+                    # Execute phase
+                    #self.execute()
             
             # Sleep before next loop iteration
             time.sleep(10)
