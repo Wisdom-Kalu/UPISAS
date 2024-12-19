@@ -39,7 +39,7 @@ services:
       - sefa-configserver
       - sefa-eureka
     ports:
-      - "32847:58085"
+      - "32849:58085"
     networks:
       - ramses-sas-net
     environment:
@@ -120,7 +120,7 @@ services:
     image: giamburrasca/sefa-instances-manager:${ARCH}
     container_name: sefa-instances-manager
     ports:
-      - "55011:58015"
+      - "32839:58015"
     networks:
       - ramses-sas-net
     restart: always
