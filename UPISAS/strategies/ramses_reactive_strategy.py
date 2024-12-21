@@ -7,74 +7,11 @@ import json
 #This is a port of the ReactiveAdaptationManager originally published alongside SWIM.
 class ReactiveAdaptationManager(Strategy):
 
-    def __init__(self, exemplar, monitor_url, execute_url):
-        super().__init__(exemplar, monitor_url, execute_url)
+    def __init__(self, exemplar, monitor_url, execute_url, lb_url):
+        super().__init__(exemplar, monitor_url, execute_url, lb_url)
         self.processed_failed_instances = set()  # Track already processed failed instances
         self.oldest_snapshot = {}  # Store the oldest active metrics snapshot for incremental comparison
         print(f"ReactiveAdaptationManager Initialized: {self.knowledge}")
-
-
-    def compute_metrics_window(self, latest_snapshot, oldest_snapshot):
-        """
-        Computes the average response time and availability within a time window
-        by comparing the latest snapshot and the oldest snapshot.
-        """
-        successful_requests_duration = 0
-        successful_requests_count = 0
-        total_requests_count = 0
-        successful_requests_window = 0
-
-        # Compare httpMetrics between latest and oldest snapshots
-        latest_http_metrics = latest_snapshot.get("httpMetrics", {})
-        oldest_http_metrics = oldest_snapshot.get("httpMetrics", {})
-
-        for endpoint, metrics in latest_http_metrics.items():
-            latest_success = metrics.get("outcomeMetrics", {}).get("SUCCESS", {})
-            oldest_success = oldest_http_metrics.get(endpoint, {}).get("outcomeMetrics", {}).get("SUCCESS", {})
-
-            # Increment successful duration and count
-            duration_diff = latest_success.get("totalDuration", 0) - oldest_success.get("totalDuration", 0)
-            count_diff = latest_success.get("count", 0) - oldest_success.get("count", 0)
-
-            #For debugging only
-            #print(f"Endpoint: {endpoint}")
-            #print(f"  Duration Diff: {duration_diff}")
-            #print(f"  Count Diff: {count_diff}")
-
-            successful_requests_duration += duration_diff
-            successful_requests_count += count_diff
-
-        # Compare circuitBreakerMetrics between latest and oldest snapshots
-        latest_circuit_metrics = latest_snapshot.get("circuitBreakerMetrics", {})
-        oldest_circuit_metrics = oldest_snapshot.get("circuitBreakerMetrics", {})
-
-        for circuit, metrics in latest_circuit_metrics.items():
-            latest_total = metrics.get("totalCallsCount", 0)
-            oldest_total = oldest_circuit_metrics.get(circuit, {}).get("totalCallsCount", 0)
-            latest_successful = metrics.get("callCount", {}).get("SUCCESSFUL", 0)
-            oldest_successful = oldest_circuit_metrics.get(circuit, {}).get("callCount", {}).get("SUCCESSFUL", 0)
-
-            total_requests_count += latest_total - oldest_total
-            successful_requests_window += latest_successful - oldest_successful
-
-            # Print statements for debugging
-            #print(f"Circuit: {circuit}")
-            #print(f"  Latest Total Calls: {latest_total}, Oldest Total Calls: {oldest_total}")
-            #print(f"  Latest Successful Calls: {latest_successful}, Oldest Successful Calls: {oldest_successful}")
-
-        # Calculate average response time and availability
-        avg_response_time = successful_requests_duration / successful_requests_count if successful_requests_count > 0 else 0
-        availability = (successful_requests_window / total_requests_count) * 100 if total_requests_count > 0 else None
-
-        # Print statements for debugging
-        #print(f"Final successful_requests_duration: {successful_requests_duration}")
-        #print(f"Final successful_requests_count: {successful_requests_count}")
-        #print(f"Final total_requests_count: {total_requests_count}")
-        #print(f"Final successful_requests_window: {successful_requests_window}")
-        #print(f"Computed avg_response_time: {avg_response_time}")
-        #print(f"Computed availability: {availability}")
-
-        return avg_response_time, availability
 
 
     def analyze(self):
@@ -82,7 +19,6 @@ class ReactiveAdaptationManager(Strategy):
         Analyzes the monitored data from Knowledge to calculate metrics and identify failures.
         Updates analysis results in Knowledge and avoids re-processing failed instances.
         """
-
         monitored_data = self.knowledge.monitored_data
         failed_instances = {}
         total_avg_response_time = 0
@@ -90,7 +26,8 @@ class ReactiveAdaptationManager(Strategy):
         active_service_count_response_time = 0
         active_service_count_availability = 0
         predicted_failures = {}
-        #recyclable_instances = {}
+        self.processed_predicted_instances = set()
+        MAX_FAILURE_TIME = 100
 
         # Define thresholds
         availability_threshold = 95.0  # Minimum acceptable availability
@@ -105,11 +42,27 @@ class ReactiveAdaptationManager(Strategy):
         }
 
         for service_id, service_data in monitored_data.items():
-            for snapshot in service_data.get("snapshot", []):
+            snapshots = service_data.get("snapshot", [])
+            #print(f"Service: {service_id}, Snapshots: {len(snapshots)}")
+
+            if not snapshots:
+                print(f"Skipping service {service_id}: No snapshots available.")
+                continue
+
+            for snapshot in snapshots:
                 instance_id = snapshot.get("instanceId", None)
-                if not instance_id:  # Changed: Check if instance_id is missing
-                    print(f"Skipping snapshot for service {service_id}: Missing instanceId.") 
+
+                if not instance_id:
+                    print(f"Skipping snapshot for service {service_id}: Missing instanceId.")
                     continue
+
+                # Skip already processed predicted instances
+                if instance_id in self.processed_predicted_instances:
+                    continue
+
+                # Mark instance as processed
+                self.processed_predicted_instances.add(instance_id)
+
                 history = monitored_data.get(instance_id, {}).get("history", {})
 
                 # Skip instances that have already been acted upon
@@ -118,9 +71,10 @@ class ReactiveAdaptationManager(Strategy):
 
                 # Check for failed, unreachable, or inactive instances
                 if not snapshot.get("active", True) or snapshot.get("failed") or snapshot.get("unreachable"):
+                    print(f"  Instance {instance_id} is failed or unreachable.")
                     failed_instances[service_id] = failed_instances.get(service_id, [])
                     failed_instances[service_id].append(instance_id)
-                    continue  # Move to next snapshot
+                    continue
 
                 # Check if a new instance has replaced a failed one
                 if snapshot.get("active", True) and snapshot.get("status") == "ACTIVE":
@@ -129,32 +83,18 @@ class ReactiveAdaptationManager(Strategy):
 
                 # Prolonged booting detection
                 booting_trend = history.get("bootingStatus", [])[-5:]
-                if len(booting_trend) == 5 and all(booting_trend):  # This one checks if boooting persists across 5 iterations
+                if len(booting_trend) == 5 and all(booting_trend):
                     print(f"Instance {instance_id} stuck in booting state.")
                     failed_instances[service_id] = failed_instances.get(service_id, [])
                     failed_instances[service_id].append(instance_id)
                     continue
 
-                # Detect recovered instances for recycling
-                #if snapshot.get("active", True) and instance_id in self.processed_failed_instances:
-                    #print(f"Instance {instance_id} has recovered and is now eligible for recycling.")
-                    #recyclable_instances[service_id] = recyclable_instances.get(service_id, [])
-                    #recyclable_instances[service_id].append(instance_id)
+                # Predictive failure detection for critical services
+                if service_id in ["ordering-service", "payment-proxy-1-service"]:
+                    cpu_trend = history.get("cpuUsage", [])[-5:]
+                    response_trend = history.get("responseTime", [])[-5:]
+                    latency_trend = history.get("requestLatency", [])[-5:]
 
-                # Predictive failure detection for the critical services in our restaurant system
-                if service_id in ["ordering-service", "payment-service"]:
-                    for snapshot in service_data.get("snapshot", []):
-                        instance_id = snapshot.get("instanceId")
-                        if not instance_id:
-                            print(f"Skipping snapshot: Missing instanceId for service {service_id}.")
-                            continue  # Skip this snapshot if instance_id is missing
-                        print(f"Instance ID for {service_id}: {instance_id}")
-                    # Calculate trends
-                    cpu_trend = history["cpuUsage"][-5:] if len(history["cpuUsage"]) >= 5 else []
-                    response_trend = history["responseTime"][-5:] if len(history["responseTime"]) >= 5 else []
-                    latency_trend = history["requestLatency"][-5:] if len(history["requestLatency"]) >= 5 else []
-
-                    # Detect trends
                     if (
                         all(cpu > trend_thresholds["cpuUsage"] for cpu in cpu_trend) or
                         all(rt > trend_thresholds["responseTime"] for rt in response_trend) or
@@ -163,33 +103,26 @@ class ReactiveAdaptationManager(Strategy):
                         predicted_failures[service_id] = predicted_failures.get(service_id, [])
                         predicted_failures[service_id].append(instance_id)
 
-            # Compare current snapshot with oldest snapshot for incremental metrics
-            oldest_snapshot = self.oldest_snapshot.get(instance_id, {})
-            avg_response_time, availability = self.compute_metrics_window(snapshot, oldest_snapshot)
+                # Compare current snapshot with the oldest snapshot for incremental metrics
+                oldest_snapshot = self.oldest_snapshot.get(instance_id, {})
+                avg_response_time, availability = self.compute_metrics_window(snapshot, oldest_snapshot)
 
-            # Print intermediate results (for debugging only)
-            #print(f"  Avg Response Time (Instance): {avg_response_time}")
-            #print(f"  Availability (Instance): {availability}")
+                # Aggregate metrics
+                if avg_response_time > 0:
+                    total_avg_response_time += avg_response_time
+                    active_service_count_response_time += 1
 
-            # Aggregate response time
-            if avg_response_time > 0:
-                total_avg_response_time += avg_response_time
-                active_service_count_response_time += 1
+                if availability is not None:
+                    total_availability += availability
+                    active_service_count_availability += 1
 
-            # Aggregate availability if it exists
-            if availability is not None:
-                total_availability += availability
-                active_service_count_availability += 1
-
-                # Update oldest_snapshot only if new availability data is non-zero
-                if availability > 0:
-                    self.oldest_snapshot[instance_id] = snapshot
-                    #print(f"  Updated oldest snapshot for instance {instance_id}")
+                    # Update oldest_snapshot if availability is non-zero
+                    if availability > 0:
+                        self.oldest_snapshot[instance_id] = snapshot
 
         # Calculate final average metrics
         avg_response_time = total_avg_response_time / active_service_count_response_time if active_service_count_response_time > 0 else 0
         availability = total_availability / active_service_count_availability if active_service_count_availability > 0 else None
-
 
         # Update analysis results in Knowledge
         self.knowledge.analysis_data = {
@@ -199,28 +132,26 @@ class ReactiveAdaptationManager(Strategy):
             "predicted_failures": predicted_failures
         }
 
-        # Print metrics
-        print(f"Average Response Time: {avg_response_time:.2f} ms")
-        if availability is not None:
-            print(f"Availability: {availability:.2f}%")
-        else:
-            print("Availability: N/A (No circuitBreakerMetrics)")
+        if time.time() - self.failed_timestamps[instance_id] > MAX_FAILURE_TIME:
+            print(f"Instance {instance_id} exceeded failure timeout. Marking for removal.")
+            failed_instances[service_id] = failed_instances.get(service_id, [])
+            failed_instances[service_id].append(instance_id)
 
-        # Threshold checks
+        # Debugging results
+        print("Analysis complete.")
+        #print(f"  Failed Instances: {json.dumps(failed_instances, indent=2)}")
+        print(f"  Average Response Time: {avg_response_time}")
+        print(f"  Availability: {availability}")
+
+
+        # Print thresholds and warnings
         if avg_response_time > response_time_threshold:
             print(f"Warning: Average Response Time exceeds threshold ({response_time_threshold} ms).")
         if availability is not None and availability < availability_threshold:
             print(f"Warning: Availability below threshold ({availability_threshold}%).")
 
-        # Print failed instances
-        if failed_instances:
-            print(f"New failed instances detected: {json.dumps(failed_instances, indent=2)}")
-        if predicted_failures:
-            print(f"Predicted failures detected: {json.dumps(predicted_failures, indent=2)}")
-
 
     def plan(self):
-        
         
         analysis_data = self.knowledge.analysis_data
         print(f"Analysis data: {analysis_data}")
@@ -229,20 +160,24 @@ class ReactiveAdaptationManager(Strategy):
         actions = []
         load_balancer_adjustments = []
 
-        # Maintain standby instances for critical services
-        critical_services = ["ordering-service", "payment-service"]
-        standby_pool = self.knowledge.standby_pool
-        print(f"Standby Pool Before Planning: {json.dumps(self.knowledge.standby_pool, indent=2)}")
+        # Dynamically manage standby pool for critical services
+        standby_actions = self.manage_standby_pool()
+        actions.extend(standby_actions)
 
-        for service_id in critical_services:
-            if service_id not in standby_pool or not standby_pool[service_id]:
-                print(f"No standby instance for {service_id}. Adding one.")
-                actions.append({
-                    "operation": "addInstances",
-                    "serviceImplementationName": service_id,
-                    "numberOfInstances": 1
-                })
-                standby_pool[service_id] = f"{service_id}-standby"
+        # Maintain standby instances for critical services
+        #critical_services = ["ordering-service", "payment-proxy-1-service"]
+        #standby_pool = self.knowledge.standby_pool
+        #print(f"Standby Pool Before Planning: {json.dumps(self.knowledge.standby_pool, indent=2)}")
+
+        #for service_id in critical_services:
+            #if service_id not in standby_pool or not standby_pool[service_id]:
+                #print(f"No standby instance for {service_id}. Adding one.")
+                #actions.append({
+                    #"operation": "addInstances",
+                    #"serviceImplementationName": service_id,
+                    #"numberOfInstances": 1
+                #})
+                #standby_pool[service_id] = f"{service_id}-standby"
 
         # Handle failed instances
         if failed_instances:
@@ -277,11 +212,13 @@ class ReactiveAdaptationManager(Strategy):
                             "instancesToRemoveWeightOf": instances
                         })
 
+
+
         # Handle predicted failures
         if predicted_failures:
             for service_id, instances in predicted_failures.items():
                 service_implementation_name = self.knowledge.monitored_data.get(service_id, {}).get("currentImplementationId", None)
-                standby_instance = standby_pool.get(service_id)
+                standby_instance = self.knowledge.standby_pool.get(service_id)
 
                 if service_implementation_name and standby_instance:
                     print(f"Activating standby instance {standby_instance} for predicted failure in {service_id}.")
@@ -292,6 +229,7 @@ class ReactiveAdaptationManager(Strategy):
                         "instancesToRemoveWeightOf": instances
                     })
 
+                    # If recovery attempts fail, remove the failed instance and replace it
                     for instance_id in instances:
                         print(f"Removing predicted failed instance {instance_id} for {service_id}.")
                         actions.append({
@@ -301,7 +239,7 @@ class ReactiveAdaptationManager(Strategy):
                             "port": int(instance_id.split(":")[1])
                         })
 
-                    # Add a new standby instance
+                    # Add a new standby instance to replace the failed one
                     new_standby = f"{service_id}-standby-new"
                     print(f"Adding new standby instance {new_standby} for {service_id}.")
                     actions.append({
@@ -309,46 +247,12 @@ class ReactiveAdaptationManager(Strategy):
                         "serviceImplementationName": service_id,
                         "numberOfInstances": 1
                     })
-                    standby_pool[service_id] = new_standby
+                    self.knowledge.standby_pool[service_id] = new_standby
                     load_balancer_adjustments.append({
                         "operation": "changeLBWeights",
                         "serviceID": service_id,
                         "newWeights": {new_standby: 0.0}
                     })
-
-        # Update planned actions and load balancer adjustments in Knowledge
-        self.knowledge.plan_data = actions
-        self.knowledge.adaptation_options = load_balancer_adjustments
-
-
-        """
-        if predicted_failures:
-
-            # Handle proactive predictions for critical services
-            for service_id, instances in predicted_failures.items():
-                service_implementation_name = self.knowledge.monitored_data.get(service_id, {}).get("currentImplementationId", None)
-                standby_instance = standby_pool.get(service_id)
-
-                
-                if service_implementation_name and standby_instance:
-                    print(f"Proactively adding new instances for {service_id} due to predicted failures.")
-                    actions.append({
-                        "operation": "addInstances",
-                        "serviceImplementationName": service_implementation_name,
-                        "numberOfInstances": len(instances)  # Add one instance per predicted failure
-                    })
-
-                    # Redirect requests from predicted instances to the new ones
-                    sibling_instances = self.knowledge.monitored_data.get(service_id, {}).get("instances", [])
-                    alive_instances = [inst for inst in sibling_instances if inst not in instances]
-                    new_instances = [f"{service_id}-new-{i}" for i in range(len(instances))]
-                    load_balancer_adjustments.append({
-                        "operation": "changeLBWeights",
-                        "serviceID": service_id,
-                        "newWeights": {instance: 1.0 / len(alive_instances + new_instances) for instance in (alive_instances + new_instances)},
-                        "instancesToRemoveWeightOf": instances
-                    })  
-        """
 
         # Update planned actions and load balancer adjustments in Knowledge
         self.knowledge.plan_data = actions

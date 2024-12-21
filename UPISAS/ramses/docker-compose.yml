@@ -91,7 +91,7 @@ services:
     depends_on:
       - sefa-configserver
     ports:
-      - "32836:58080"  # Adjust the port mapping if necessary
+      - "32836:58080"  
     networks:
       - ramses-sas-net
     restart: always
