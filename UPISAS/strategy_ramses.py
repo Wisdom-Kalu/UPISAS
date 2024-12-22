@@ -126,35 +126,47 @@ class Strategy(ABC):
         # Execute changeLBWeights actions
         time.sleep(20) #wait for instance to power up fully
         for adjustment in load_balancer_adjustments:
+    
             if adjustment.get("operation") == "changeLBWeights":
                 print(f"Executing changeLBWeights action: {adjustment}")
                 try:
-                    # Construct the request body as per the specified API
+                    # Construct the request body
                     service_id = adjustment.get("serviceID")
                     updated_instances = self.get_instances_for_service(service_id)
 
-                    print(f"[Execute]\tUpdated instances: {updated_instances}")
+                    if not updated_instances:
+                        raise ValueError(f"No instances available for service {service_id}. Cannot update load balancer weights.")
 
-                    new_weights = 1 / len(updated_instances)
+                    # Calculate weights
+                    new_weights = 1.0 / len(updated_instances)
                     updated_weights = {instance: new_weights for instance in updated_instances}
-                    adjustment["newWeights"] = updated_weights
-                    
-                    headers = {'Content-Type': 'application/json'}
-                    lb_request_body = {
-                        "serviceID": adjustment.get("serviceID"),
-                        "newWeights": new_weights,
+
+                    # Build request body
+                    request_body = {
+                        "weightsId": service_id,
+                        "weights": updated_weights,
                         "instancesToRemoveWeightOf": adjustment.get("instancesToRemoveWeightOf", [])
                     }
-                    response = requests.post(self.lb_url, headers=headers, json=lb_request_body)
-                    print(f"  Request body: {json.dumps(lb_request_body, indent=2)}")
+
+                    # Debugging
+                    print(f"DEBUG: Request body sent to load balancer: {json.dumps(request_body, indent=2)}")
+
+                    # Send the API request
+                    response = requests.post(self.lb_url, headers={'Content-Type': 'application/json'}, json=request_body)
                     response.raise_for_status()
+
                     result = response.json()
                     results.append(result)
                     print(f"Load balancer weights updated successfully: {result}")
+
                 except requests.RequestException as e:
                     error_message = f"Failed to execute changeLBWeights action {adjustment}: {e}"
+                    if e.response:
+                        error_message += f" | Response: {e.response.text}"
                     results.append({"adjustment": adjustment, "error": error_message})
                     print(error_message)
+                except ValueError as ve:
+                    print(f"ValueError: {ve}")
 
         # Store execution results in the Knowledge base
         self.knowledge.adaptation_options = results

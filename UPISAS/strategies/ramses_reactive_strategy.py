@@ -13,7 +13,6 @@ class ReactiveAdaptationManager(Strategy):
         self.oldest_snapshot = {}  # Store the oldest active metrics snapshot for incremental comparison
 
 
-
     def analyze(self):
         """
         Analyzes the monitored data from Knowledge to calculate metrics and identify failures.
@@ -212,13 +211,13 @@ class ReactiveAdaptationManager(Strategy):
                     else:
                         print(f"Some instances of {service_id} are still alive. Reconfiguring load balancer.")
                         alive_instances = [inst for inst in sibling_instances if inst not in instances]
+                        new_weights = 1.0 / len(alive_instances)
                         load_balancer_adjustments.append({
                             "operation": "changeLBWeights",
                             "serviceID": service_id,
-                            "newWeights": {instance: 1.0 / len(alive_instances) if alive_instances else 0 for instance in alive_instances},
+                            "newWeights": new_weights,
                             "instancesToRemoveWeightOf": instances
                         })
-
 
 
         # Handle predicted failures
@@ -231,9 +230,12 @@ class ReactiveAdaptationManager(Strategy):
                     print(f"Activating standby instance {standby_instance} for predicted failure in {service_id}.")
                     load_balancer_adjustments.append({
                         "operation": "changeLBWeights",
-                        "serviceID": service_id,
-                        "newWeights": {standby_instance: 1.0},
-                        "instancesToRemoveWeightOf": instances
+                        # "serviceID": service_id,
+                        "serviceID": standby_instance,
+                        #"newWeights": {standby_instance: 1.0},
+                        #"instancesToRemoveWeightOf": instances
+                        "newWeights": 1.0,
+                        "instancesToRemoveWeightOf": []
                     })
 
                     # If recovery attempts fail, remove the failed instance and replace it
@@ -258,7 +260,9 @@ class ReactiveAdaptationManager(Strategy):
                     load_balancer_adjustments.append({
                         "operation": "changeLBWeights",
                         "serviceID": service_id,
-                        "newWeights": {new_standby: 0.0}
+                        #"newWeights": {new_standby: 0.0}
+                        "newWeights": 0.0,
+                        "instancesToRemoveWeightOf": []
                     })
 
         # Update planned actions and load balancer adjustments in Knowledge
