@@ -192,24 +192,25 @@ class Strategy(ABC):
                 print(f"Removing excess standby instance {removed_instance} for {service_id}.")
 
         return actions
-
-
-
+    
     def compute_metrics_window(self, latest_snapshot, oldest_snapshot):
         """
         Computes the average response time and availability within a time window
-        by comparing the latest snapshot and the oldest snapshot.
+        by comparing the latest snapshot and the oldest snapshot using httpMetrics only.
         """
         successful_requests_duration = 0
         successful_requests_count = 0
         total_requests_count = 0
-        successful_requests_window = 0
 
         # Compare httpMetrics between latest and oldest snapshots
         latest_http_metrics = latest_snapshot.get("httpMetrics", {})
         oldest_http_metrics = oldest_snapshot.get("httpMetrics", {})
 
+        # print(f"DEBUG: Latest snapshot httpMetrics: {latest_http_metrics}")
+        # print(f"DEBUG: Oldest snapshot httpMetrics: {oldest_http_metrics}")
+
         for endpoint, metrics in latest_http_metrics.items():
+            # Extract metrics for SUCCESS outcome
             latest_success = metrics.get("outcomeMetrics", {}).get("SUCCESS", {})
             oldest_success = oldest_http_metrics.get(endpoint, {}).get("outcomeMetrics", {}).get("SUCCESS", {})
 
@@ -217,40 +218,75 @@ class Strategy(ABC):
             duration_diff = latest_success.get("totalDuration", 0) - oldest_success.get("totalDuration", 0)
             count_diff = latest_success.get("count", 0) - oldest_success.get("count", 0)
 
-            #For debugging only
-            #print(f"Endpoint: {endpoint}")
-            #print(f"  Duration Diff: {duration_diff}")
-            #print(f"  Count Diff: {count_diff}")
+            if duration_diff < 0 or count_diff < 0:
+                print(f"WARNING: Negative difference detected for endpoint {endpoint}. Skipping this endpoint.")
+                continue
 
             successful_requests_duration += duration_diff
             successful_requests_count += count_diff
 
-        # Compare circuitBreakerMetrics between latest and oldest snapshots
-        latest_circuit_metrics = latest_snapshot.get("circuitBreakerMetrics", {})
-        oldest_circuit_metrics = oldest_snapshot.get("circuitBreakerMetrics", {})
+            # Calculate total requests by summing all outcomes
+            for outcome, outcome_metrics in metrics.get("outcomeMetrics", {}).items():
+                latest_total = outcome_metrics.get("count", 0)
+                oldest_total = oldest_http_metrics.get(endpoint, {}).get("outcomeMetrics", {}).get(outcome, {}).get("count", 0)
+                total_requests_count += latest_total - oldest_total
 
-        for circuit, metrics in latest_circuit_metrics.items():
-            latest_total = metrics.get("totalCallsCount", 0)
-            oldest_total = oldest_circuit_metrics.get(circuit, {}).get("totalCallsCount", 0)
-            latest_successful = metrics.get("callCount", {}).get("SUCCESSFUL", 0)
-            oldest_successful = oldest_circuit_metrics.get(circuit, {}).get("callCount", {}).get("SUCCESSFUL", 0)
-
-            total_requests_count += latest_total - oldest_total
-            successful_requests_window += latest_successful - oldest_successful
-
-            # Print statements for debugging
-            #print(f"Circuit: {circuit}")
-            #print(f"  Latest Total Calls: {latest_total}, Oldest Total Calls: {oldest_total}")
-            #print(f"  Latest Successful Calls: {latest_successful}, Oldest Successful Calls: {oldest_successful}")
-
-        # Calculate average response time and availability
+        # Calculate average response time
         avg_response_time = successful_requests_duration / successful_requests_count if successful_requests_count > 0 else 0
+        print(f"Instances Average Response Time: {avg_response_time}")
 
-        # Calculate average response time and availability
-        availability = (successful_requests_window / total_requests_count) * 100 if total_requests_count > 0 else None
-
+        # Calculate availability
+        availability = (successful_requests_count / total_requests_count) * 100 if total_requests_count > 0 else 0
+        print(f"Instances Availability: {availability}")
 
         return avg_response_time, availability
+
+    
+    # def compute_metrics_window(self):
+    #     monitored_data = self.knowledge.monitored_data
+
+    #     results = {}
+    #     for service_id, service_data in monitored_data.items():
+    #         total_duration = 0
+    #         total_success = 0
+    #         total_requests = 0
+            
+    #         for snapshot in service_data.get("snapshot", []):
+    #             http_metrics = snapshot.get("httpMetrics", {})
+
+    #             #Debug
+    #             print(f"printing the snapshot: {http_metrics}")
+                
+    #             for endpoint, metrics in http_metrics.items():
+    #                 success = metrics.get("outcomeMetrics", {}).get("SUCCESS", {})
+    #                 #Debug
+    #                 print("Printing the SUCESS in outcomeMetrics: {sucess}")
+
+    #                 total_duration += success.get("totalDuration", 0)  
+    #                 #Debug
+    #                 print("Updating total duration: {sucess}")
+
+    #                 total_success += success.get("count", 0)
+    #                 #Debug
+    #                 print("Updating total duration: {sucess}")
+
+    #                 for outcome, outcome_metrics in metrics.get("outcomeMetrics", {}).items():
+    #                     total_requests += outcome_metrics.get("count", 0)
+    #                     #Debug
+    #                     print("Updating ttotal_requests: {total_requests}")
+            
+    #         avg_response_time = total_duration / total_success if total_success > 0 else 0
+    #         print(f"Average Response Time for single instance: {avg_response_time}")
+    #         availability = (total_success / total_requests) * 100 if total_requests > 0 else 0
+    #         print(f"Availability for single instance: {avg_response_time}")
+            
+    #         results[service_id] = {
+    #             "Average Response Time (ms)": avg_response_time,
+    #             "Availability (%)": availability
+    #         }
+    #     return results
+
+
     
     
     def _perform_get_request(self, endpoint_suffix: "API Endpoint"):

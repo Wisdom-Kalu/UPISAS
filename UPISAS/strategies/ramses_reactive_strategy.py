@@ -11,7 +11,7 @@ class ReactiveAdaptationManager(Strategy):
         super().__init__(exemplar, monitor_url, execute_url, lb_url)
         self.processed_failed_instances = set()  # Track already processed failed instances
         self.oldest_snapshot = {}  # Store the oldest active metrics snapshot for incremental comparison
-        print(f"ReactiveAdaptationManager Initialized: {self.knowledge}")
+
 
 
     def analyze(self):
@@ -19,6 +19,7 @@ class ReactiveAdaptationManager(Strategy):
         Analyzes the monitored data from Knowledge to calculate metrics and identify failures.
         Updates analysis results in Knowledge and avoids re-processing failed instances.
         """
+       
         monitored_data = self.knowledge.monitored_data
         failed_instances = {}
         total_avg_response_time = 0
@@ -27,7 +28,7 @@ class ReactiveAdaptationManager(Strategy):
         active_service_count_availability = 0
         predicted_failures = {}
         self.processed_predicted_instances = set()
-        MAX_FAILURE_TIME = 100
+        #MAX_FAILURE_TIME = 100
 
         # Define thresholds
         availability_threshold = 95.0  # Minimum acceptable availability
@@ -43,17 +44,17 @@ class ReactiveAdaptationManager(Strategy):
 
         for service_id, service_data in monitored_data.items():
             snapshots = service_data.get("snapshot", [])
-            #print(f"Service: {service_id}, Snapshots: {len(snapshots)}")
+            #print(f"Service: {service_id}, Snapshots: {snapshots}")
 
             if not snapshots:
-                print(f"Skipping service {service_id}: No snapshots available.")
+                print(f"{service_id} Service {service_id} has no snapshots available yet. Will retry in the next iteration.")
                 continue
 
             for snapshot in snapshots:
                 instance_id = snapshot.get("instanceId", None)
 
                 if not instance_id:
-                    print(f"Skipping snapshot for service {service_id}: Missing instanceId.")
+                    #print(f"Skipping snapshot for service {service_id}: Missing instanceId.")
                     continue
 
                 # Skip already processed predicted instances
@@ -78,7 +79,7 @@ class ReactiveAdaptationManager(Strategy):
 
                 # Check if a new instance has replaced a failed one
                 if snapshot.get("active", True) and snapshot.get("status") == "ACTIVE":
-                    print(f"New active instance detected: {instance_id}")
+                    #print(f"New active instance detected: {instance_id}")
                     self.processed_failed_instances.discard(instance_id)
 
                 # Prolonged booting detection
@@ -107,6 +108,8 @@ class ReactiveAdaptationManager(Strategy):
                 oldest_snapshot = self.oldest_snapshot.get(instance_id, {})
                 avg_response_time, availability = self.compute_metrics_window(snapshot, oldest_snapshot)
 
+
+
                 # Aggregate metrics
                 if avg_response_time > 0:
                     total_avg_response_time += avg_response_time
@@ -119,6 +122,9 @@ class ReactiveAdaptationManager(Strategy):
                     # Update oldest_snapshot if availability is non-zero
                     if availability > 0:
                         self.oldest_snapshot[instance_id] = snapshot
+                    else:
+                        print(f"Availability is zero for instance {instance_id}, not updating oldest snapshot.")
+
 
         # Calculate final average metrics
         avg_response_time = total_avg_response_time / active_service_count_response_time if active_service_count_response_time > 0 else 0
@@ -129,13 +135,14 @@ class ReactiveAdaptationManager(Strategy):
             "failed_instances": failed_instances,
             "avg_response_time": avg_response_time,
             "availability": availability,
-            "predicted_failures": predicted_failures
+            "predicted_failures": predicted_failures,
+        
         }
 
-        if time.time() - self.failed_timestamps[instance_id] > MAX_FAILURE_TIME:
-            print(f"Instance {instance_id} exceeded failure timeout. Marking for removal.")
-            failed_instances[service_id] = failed_instances.get(service_id, [])
-            failed_instances[service_id].append(instance_id)
+        # if time.time() - self.failed_timestamps[instance_id] > MAX_FAILURE_TIME:
+        #     print(f"Instance {instance_id} exceeded failure timeout. Marking for removal.")
+        #     failed_instances[service_id] = failed_instances.get(service_id, [])
+        #     failed_instances[service_id].append(instance_id)
 
         # Debugging results
         print("Analysis complete.")
