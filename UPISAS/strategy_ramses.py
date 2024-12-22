@@ -121,7 +121,7 @@ class Strategy(ABC):
                     error_message = f"Failed to execute addInstances action {action}: {e}"
                     results.append({"action": action, "error": error_message})
                     print(error_message)
-
+                        # Execute removeInstance actions
 
         # Execute changeLBWeights actions
         time.sleep(20) #wait for instance to power up fully

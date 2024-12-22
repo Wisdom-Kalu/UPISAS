@@ -209,6 +209,13 @@ class ReactiveAdaptationManager(Strategy):
                             "numberOfInstances": 1
                         })
                     else:
+                        #if service_id in standby_actions:
+                        #print(f"{service_id} is a critical service. Adding another instance.")
+                        actions.append({
+                            "operation": "addInstances",
+                            "serviceImplementationName": service_implementation_name,
+                            "numberOfInstances": 1
+                        })
                         print(f"Some instances of {service_id} are still alive. Reconfiguring load balancer.")
                         alive_instances = [inst for inst in sibling_instances if inst not in instances]
                         new_weights = 1.0 / len(alive_instances)
