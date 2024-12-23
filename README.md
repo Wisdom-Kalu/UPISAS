@@ -26,5 +26,25 @@ Please create a .env file in UPISAS\ramses and replace the field according to th
 # New instance added succesfuly after adaptation
 ![alt text](<Screenshot (15).png>)
 
+### Guidelines to Run 
+In a terminal, navigate to the parent folder of the project:
+
+1. Start Docker containers for the system under test for the baseline strategy by the command
+
+```
+ python run.py
+```
+
+Wait for the container to be initialized and up for approx 5 minutes.
+
+2. Go to the SEAMS artififact and run the REST_CLIENT and wait for the qos metrics.
+
+3. To run the simulations, we have created a file named experiment_script.py, to get simulations for baseline run the file with the command 
+```
+ python experiment_script.py
+```
+and the same goes for our strategy which is in the file named ramses_run.py.
+
+4. The scripts for our simulations are present in the folder named data_visualization. Running this will create csv files with the required qos data.
 
 
